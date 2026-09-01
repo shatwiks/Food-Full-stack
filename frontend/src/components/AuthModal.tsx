@@ -37,16 +37,16 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       const payload =
         mode === 'register'
           ? {
-              email: form.email.trim(),
-              password: form.password,
-              firstName: form.firstName.trim() || undefined,
-              lastName: form.lastName.trim() || undefined,
-              role: form.role,
-            }
+            email: form.email.trim(),
+            password: form.password,
+            firstName: form.firstName.trim() || undefined,
+            lastName: form.lastName.trim() || undefined,
+            role: form.role,
+          }
           : {
-              email: form.email.trim(),
-              password: form.password,
-            };
+            email: form.email.trim(),
+            password: form.password,
+          };
 
       const res = await apiClient.post(endpoint, payload);
       const { user, tokens } = res.data;
