@@ -23,17 +23,32 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orders    Order[]
-  restaurants Restaurant[]
+  orders         Order[]
+  restaurants    Restaurant[]
+  refreshTokens  RefreshToken[]
 
   @@index([email])
   @@index([role])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Restaurant {
   id          String   @id @default(cuid())
   name        String
   slug        String   @unique
+  cuisine     String?
   description String?
   address     String?
   phone       String?

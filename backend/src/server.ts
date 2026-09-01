@@ -1,18 +1,20 @@
-import express from 'express';
-import cors from 'cors';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
-import { healthRouter } from './routes/health.js';
+import { app } from './app.js';
+import { initWss } from './lib/wss.js';
 
 dotenv.config();
 
-const app = express();
 const port = Number(process.env.PORT ?? 3001);
 
-app.use(cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173', credentials: true }));
-app.use(express.json());
+// Wrap Express in a plain http.Server so the WS server can share the same port.
+const httpServer = createServer(app);
 
-app.use('/', healthRouter);
+const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+initWss(wss);
 
-app.listen(port, '0.0.0.0', () => {
+httpServer.listen(port, '0.0.0.0', () => {
   console.log(`OrderFlow backend listening on http://localhost:${port}`);
+  console.log(`OrderFlow WebSocket listening on ws://localhost:${port}/ws`);
 });
