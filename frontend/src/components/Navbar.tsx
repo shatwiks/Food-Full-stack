@@ -1,15 +1,16 @@
-import { Sun, Moon, ShoppingBag, ClipboardList, LayoutDashboard, LogOut } from 'lucide-react';
+import { Menu, Sun, Moon, ShoppingBag, ClipboardList, LayoutDashboard, LogOut } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { useThemeStore } from '../store/themeStore';
 
 interface NavbarProps {
+  onToggleSidebar?: () => void;
   onOpenAuth: () => void;
   onOpenOrders: () => void;
   onOpenDashboard: () => void;
 }
 
-export default function Navbar({ onOpenAuth, onOpenOrders, onOpenDashboard }: NavbarProps) {
+export default function Navbar({ onToggleSidebar, onOpenAuth, onOpenOrders, onOpenDashboard }: NavbarProps) {
   const { user, logout } = useAuthStore();
   const { totalCount, setIsOpen } = useCartStore();
   const { theme, toggleTheme } = useThemeStore();
@@ -20,13 +21,27 @@ export default function Navbar({ onOpenAuth, onOpenOrders, onOpenDashboard }: Na
   return (
     <header className="top-nav">
       <div className="nav-container">
-        <a href="/" className="brand">
-          <span className="brand-dot"></span>
-          <span className="brand-text">
-            Order<span className="brand-gradient">Flow</span>
-          </span>
-          <span className="brand-badge">PRO</span>
-        </a>
+        <div className="nav-left">
+          {onToggleSidebar && (
+            <button
+              type="button"
+              className="btn-sidebar-toggle"
+              onClick={onToggleSidebar}
+              aria-label="Toggle navigation sidebar"
+              title="Navigation Menu"
+            >
+              <Menu size={20} />
+            </button>
+          )}
+
+          <a href="/" className="brand">
+            <span className="brand-dot"></span>
+            <span className="brand-text">
+              Order<span className="brand-gradient">Flow</span>
+            </span>
+            <span className="brand-badge">PRO</span>
+          </a>
+        </div>
 
         <div className="nav-actions">
           {/* Futuristic Theme Switcher */}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
 import { useCartStore } from '../store/cartStore';
 import { useToastStore } from '../store/toastStore';
+import { formatPrice } from '../utils/currency';
 import type { MenuItem, Restaurant } from '../types';
 
 interface RestaurantMenuModalProps {
@@ -124,7 +125,7 @@ export default function RestaurantMenuModal({ restaurant, onClose }: RestaurantM
                 <div key={item.id} className={`menu-card ${!item.isAvailable ? 'sold-out' : ''}`}>
                   <div className="menu-card-header">
                     <h4 className="dish-name">{item.name}</h4>
-                    <span className="dish-price">${Number(item.price).toFixed(2)}</span>
+                    <span className="dish-price">{formatPrice(item.price)}</span>
                   </div>
 
                   {item.description && (

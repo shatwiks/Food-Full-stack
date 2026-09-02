@@ -3,6 +3,7 @@ import { apiClient } from '../api/client';
 import { useAuthStore } from '../store/authStore';
 import { useToastStore } from '../store/toastStore';
 import { useOrderWebSocket } from '../hooks/useOrderWebSocket';
+import { formatPrice } from '../utils/currency';
 import type { Order, OrderStatus } from '../types';
 
 interface OrdersModalProps {
@@ -183,7 +184,7 @@ export default function OrdersModal({ isOpen, onClose }: OrdersModalProps) {
                           {item.menuItem?.name || `Item (${item.menuItemId.slice(-4)})`}
                         </span>
                         <span className="order-item-subtotal">
-                          ${(Number(item.unitPrice) * item.quantity).toFixed(2)}
+                          {formatPrice(Number(item.unitPrice) * item.quantity)}
                         </span>
                       </div>
                     ))}
@@ -191,7 +192,7 @@ export default function OrdersModal({ isOpen, onClose }: OrdersModalProps) {
 
                   <div className="order-card-footer">
                     <span className="order-total-label">Total Amount</span>
-                    <span className="order-total-value">${Number(order.totalAmount).toFixed(2)}</span>
+                    <span className="order-total-value">{formatPrice(order.totalAmount)}</span>
                   </div>
                 </div>
               ))}

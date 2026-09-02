@@ -3,6 +3,7 @@ import { apiClient } from '../api/client';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { useToastStore } from '../store/toastStore';
+import { formatPrice } from '../utils/currency';
 
 interface CartDrawerProps {
   onOpenAuth: () => void;
@@ -31,7 +32,7 @@ export default function CartDrawer({ onOpenAuth, onOrderSuccess }: CartDrawerPro
   if (!isOpen) return null;
 
   const currentSubtotal = subtotal();
-  const deliveryFee = currentSubtotal > 30 || currentSubtotal === 0 ? 0 : 2.99;
+  const deliveryFee = currentSubtotal > 300 || currentSubtotal === 0 ? 0 : 40;
   const grandTotal = currentSubtotal + deliveryFee;
 
   const handleCheckout = async () => {
@@ -51,28 +52,28 @@ export default function CartDrawer({ onOpenAuth, onOrderSuccess }: CartDrawerPro
       return;
     }
 
-    setSubmitting(true);
-    setOrderError('');
-
     try {
+      setSubmitting(true);
+      setOrderError('');
+
       const payload = {
         restaurantId,
         deliveryAddress: deliveryAddress.trim(),
-        items: items.map((item) => ({
-          menuItemId: item.menuItem.id,
-          quantity: item.quantity,
+        items: items.map((i) => ({
+          menuItemId: i.menuItem.id,
+          quantity: i.quantity,
         })),
       };
 
-      const response = await apiClient.post('/orders', payload);
-      if (response.data.status === 'success') {
-        addToast('Order placed successfully! 🚀', 'success');
+      const res = await apiClient.post('/orders', payload);
+      if (res.data.data) {
+        addToast('Order placed successfully!', 'success');
         clearCart();
         setIsOpen(false);
         onOrderSuccess();
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Failed to place order. Please try again.';
+      const msg = err.response?.data?.error || 'Failed to place order. Please try again.';
       setOrderError(msg);
       addToast(msg, 'error');
     } finally {
@@ -121,7 +122,7 @@ export default function CartDrawer({ onOpenAuth, onOrderSuccess }: CartDrawerPro
                     <div className="cart-item-info">
                       <div className="cart-item-title">{item.menuItem.name}</div>
                       <div className="cart-item-unit-price">
-                        ${Number(item.menuItem.price).toFixed(2)} each
+                        {formatPrice(item.menuItem.price)} each
                       </div>
                     </div>
 
@@ -147,7 +148,7 @@ export default function CartDrawer({ onOpenAuth, onOrderSuccess }: CartDrawerPro
                       </div>
 
                       <div className="cart-item-total">
-                        ${(Number(item.menuItem.price) * item.quantity).toFixed(2)}
+                        {formatPrice(Number(item.menuItem.price) * item.quantity)}
                       </div>
 
                       <button
@@ -178,21 +179,21 @@ export default function CartDrawer({ onOpenAuth, onOrderSuccess }: CartDrawerPro
               <div className="cart-summary">
                 <div className="summary-line">
                   <span>Subtotal</span>
-                  <span>${currentSubtotal.toFixed(2)}</span>
+                  <span>{formatPrice(currentSubtotal)}</span>
                 </div>
                 <div className="summary-line">
                   <span>Delivery Fee</span>
                   <span>
                     {deliveryFee === 0 ? (
-                      <span className="free-tag">FREE (Orders $30+)</span>
+                      <span className="free-tag">FREE (Orders ₹300+)</span>
                     ) : (
-                      `$${deliveryFee.toFixed(2)}`
+                      formatPrice(deliveryFee)
                     )}
                   </span>
                 </div>
                 <div className="summary-line total-line">
                   <span>Grand Total</span>
-                  <span>${grandTotal.toFixed(2)}</span>
+                  <span>{formatPrice(grandTotal)}</span>
                 </div>
               </div>
 
@@ -220,7 +221,7 @@ export default function CartDrawer({ onOpenAuth, onOrderSuccess }: CartDrawerPro
                 {submitting
                   ? 'Processing Order…'
                   : user
-                  ? `Place Order · $${grandTotal.toFixed(2)}`
+                  ? `Place Order · ${formatPrice(grandTotal)}`
                   : 'Sign in to Place Order'}
               </button>
             </div>

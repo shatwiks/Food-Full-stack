@@ -71,10 +71,12 @@ export const send2FAEmail = async (to: string, code: string): Promise<boolean> =
   console.log('======================================================\n');
 
   if (!resend) {
+    console.info('[2FA Mailer] ℹ️ Real email dispatch is idle (RESEND_API_KEY is not set). Using console OTP code.');
     return true;
   }
 
   try {
+    console.log(`[2FA Mailer] 🚀 Dispatching real 2FA email via Resend API to: ${to}...`);
     const response = await resend.emails.send({
       from,
       to,
@@ -83,13 +85,16 @@ export const send2FAEmail = async (to: string, code: string): Promise<boolean> =
     });
 
     if (response.error) {
-      console.warn('[2FA Mailer] Resend API Warning (relying on dev code fallback):', response.error);
+      console.warn(`[2FA Mailer] Resend API Error for ${to}:`, response.error.message || response.error);
+      console.warn('[2FA Mailer] 💡 Developer Note: In Resend free-tier sandbox without a verified domain, emails can only be delivered to your registered Resend account address.');
+      console.warn('[2FA Mailer] Continuing with [DEV 2FA CODE] so authentication flow is not blocked.');
       return true;
     }
 
+    console.log(`[2FA Mailer] ✅ Email successfully sent to ${to}! Resend Message ID: ${response.data?.id}`);
     return true;
-  } catch (error) {
-    console.warn('[2FA Mailer] Resend API Exception (relying on dev code fallback):', error);
+  } catch (error: any) {
+    console.warn('[2FA Mailer] Resend API Exception (relying on dev code fallback):', error?.message || error);
     return true;
   }
 };

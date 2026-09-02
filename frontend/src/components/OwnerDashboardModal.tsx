@@ -3,6 +3,7 @@ import { apiClient } from '../api/client';
 import { useAuthStore } from '../store/authStore';
 import { useToastStore } from '../store/toastStore';
 import { useOrderWebSocket } from '../hooks/useOrderWebSocket';
+import { formatPrice } from '../utils/currency';
 import type { MenuItem, Order, OrderStatus, Restaurant } from '../types';
 
 interface OwnerDashboardModalProps {
@@ -401,7 +402,7 @@ export default function OwnerDashboardModal({
         <div className="dashboard-kpi-bar">
           <div className="kpi-card">
             <span className="kpi-label">Total Revenue</span>
-            <span className="kpi-value">${stats.totalRevenue.toFixed(2)}</span>
+            <span className="kpi-value">{formatPrice(stats.totalRevenue)}</span>
           </div>
           <div className="kpi-card">
             <span className="kpi-label">Total Orders</span>
@@ -546,7 +547,7 @@ export default function OwnerDashboardModal({
                             <span>
                               <strong>{i.quantity}x</strong> {i.menuItem?.name || 'Dish'}
                             </span>
-                            <span>${(Number(i.unitPrice) * i.quantity).toFixed(2)}</span>
+                            <span>{formatPrice(Number(i.unitPrice) * i.quantity)}</span>
                           </div>
                         ))}
                       </div>
@@ -557,7 +558,7 @@ export default function OwnerDashboardModal({
 
                       <div className="owner-order-total">
                         <span>Total Paid</span>
-                        <strong>${Number(order.totalAmount).toFixed(2)}</strong>
+                        <strong>{formatPrice(order.totalAmount)}</strong>
                       </div>
 
                       <div className="status-flow-actions">
@@ -663,7 +664,7 @@ export default function OwnerDashboardModal({
                       />
                     </div>
                     <div className="field">
-                      <label htmlFor="dishPrice">Price ($) *</label>
+                      <label htmlFor="dishPrice">Price (₹) *</label>
                       <input
                         id="dishPrice"
                         type="number"
@@ -675,7 +676,7 @@ export default function OwnerDashboardModal({
                             ? setEditItemForm({ ...editItemForm, price: e.target.value })
                             : setItemForm({ ...itemForm, price: e.target.value })
                         }
-                        placeholder="14.99"
+                        placeholder="280"
                         required
                       />
                     </div>
@@ -749,7 +750,7 @@ export default function OwnerDashboardModal({
                           <div className="item-left">
                             <div className="item-name-row">
                               <strong>{item.name}</strong>
-                              <span className="dish-price">${Number(item.price).toFixed(2)}</span>
+                              <span className="dish-price">{formatPrice(item.price)}</span>
                             </div>
                             {item.description && (
                               <p className="item-desc-small">{item.description}</p>

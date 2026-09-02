@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiClient } from '../api/client';
 import { useAuthStore } from '../store/authStore';
+import { useCartStore } from '../store/cartStore';
 import { useToastStore } from '../store/toastStore';
 import type { Restaurant } from '../types';
 
 import Navbar from '../components/Navbar';
+import Sidebar from '../components/Sidebar';
 import RestaurantCard from '../components/RestaurantCard';
 import RestaurantMenuModal from '../components/RestaurantMenuModal';
 import CartDrawer from '../components/CartDrawer';
@@ -13,11 +15,12 @@ import OwnerDashboardModal from '../components/OwnerDashboardModal';
 import AuthModal from '../components/AuthModal';
 import ToastContainer from '../components/ToastContainer';
 
-const CUISINES = ['All', 'Italian', 'Mexican', 'Japanese', 'American', 'Indian'];
+const CUISINES = ['All', 'Indian', 'Italian', 'Mexican', 'Japanese', 'American'];
 
 export default function HomePage() {
   const { user } = useAuthStore();
   const { addToast } = useToastStore();
+  const { setIsOpen: setIsCartOpen } = useCartStore();
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +29,7 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals & Drawers state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeRestaurant, setActiveRestaurant] = useState<Restaurant | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isOrdersOpen, setIsOrdersOpen] = useState(false);
@@ -70,9 +74,20 @@ export default function HomePage() {
       <ToastContainer />
 
       <Navbar
+        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenOrders={() => setIsOrdersOpen(true)}
         onOpenDashboard={() => setIsDashboardOpen(true)}
+      />
+
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        onSelectCuisine={(cuisine) => setSelectedCuisine(cuisine)}
+        onOpenCart={() => setIsCartOpen(true)}
+        onOpenOrders={() => setIsOrdersOpen(true)}
+        onOpenDashboard={() => setIsDashboardOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       <main className="main-content">
@@ -80,12 +95,12 @@ export default function HomePage() {
         <section className="hero-banner">
           <div className="hero-banner-inner">
             <div className="hero-text-content">
-              <span className="hero-eyebrow">⚡ Fresh Meals & Fast Neighborhood Delivery</span>
+              <span className="hero-eyebrow">⚡ Desi Zaika, Street Eats & Gourmet Dining</span>
               <h1 className="hero-heading">
                 Discover exceptional food from <span className="highlight-text">local kitchens</span>.
               </h1>
               <p className="hero-subheading">
-                Browse chef-crafted menus, customize your order, and get steaming hot dishes delivered to your doorstep in minutes.
+                Explore fragrant biryanis, woodfired pizzas, and artisan burgers crafted by master chefs and delivered piping hot.
               </p>
 
               {/* Search input bar */}
@@ -99,7 +114,7 @@ export default function HomePage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by restaurant name, dish, or flavor..."
+                    placeholder="Search by restaurant name, dish (e.g. Biryani, Dosa), or cuisine..."
                   />
                   {searchQuery && (
                     <button
@@ -127,7 +142,8 @@ export default function HomePage() {
               </p>
               <div className="highlight-tags">
                 <span>⏱️ ~25-35 min</span>
-                <span>🔥 Free delivery $30+</span>
+                <span>🔥 Free delivery ₹300+</span>
+                <span>🍛 Authentic Desi</span>
               </div>
             </div>
           </div>
@@ -150,7 +166,17 @@ export default function HomePage() {
                 className={`cuisine-pill ${selectedCuisine === c ? 'active' : ''}`}
                 onClick={() => setSelectedCuisine(c)}
               >
-                {c === 'All' ? '🍽️ All Cuisines' : c === 'Italian' ? '🍕 Italian' : c === 'Mexican' ? '🌮 Mexican' : c === 'Japanese' ? '🍣 Japanese' : c === 'American' ? '🍔 American' : '🍛 Indian'}
+                {c === 'All'
+                  ? '🍽️ All Cuisines'
+                  : c === 'Indian'
+                  ? '🍛 Indian Specials'
+                  : c === 'Italian'
+                  ? '🍕 Italian'
+                  : c === 'Mexican'
+                  ? '🌮 Mexican'
+                  : c === 'Japanese'
+                  ? '🍣 Japanese'
+                  : '🍔 American'}
               </button>
             ))}
           </div>
