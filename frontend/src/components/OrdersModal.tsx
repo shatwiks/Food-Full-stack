@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
-import { useAuthStore } from '../store/authstore';
+import { useAuthStore } from '../store/authStore';
 import { useToastStore } from '../store/toastStore';
 import { useOrderWebSocket } from '../hooks/useOrderWebSocket';
 import type { Order, OrderStatus } from '../types';
@@ -82,18 +82,22 @@ export default function OrdersModal({ isOpen, onClose }: OrdersModalProps) {
     [user, isOpen, addToast]
   );
 
-  // Mount WS only when logged in as CUSTOMER (or ADMIN)
-  const wsEnabled = !!user && (user.role === 'CUSTOMER' || user.role === 'ADMIN');
-  useOrderWebSocket(handleWsEvent, wsEnabled);
+  // Mount Socket.IO only when logged in as CUSTOMER (or ADMIN) and modal is open
+  const wsEnabled = !!user && (user.role === 'CUSTOMER' || user.role === 'ADMIN') && isOpen;
+  const { isConnected, joinOrder, leaveOrder } = useOrderWebSocket(handleWsEvent, wsEnabled);
 
-  // Track WS connection state for the live badge
+  // Subscribe to active order rooms for targeted push updates
   useEffect(() => {
-    if (!wsEnabled) { setWsConnected(false); return; }
-    // Optimistically mark as connected after a brief moment;
-    // the hook will re-connect if it drops, giving visual feedback.
-    const t = setTimeout(() => setWsConnected(true), 1200);
-    return () => clearTimeout(t);
-  }, [wsEnabled]);
+    if (!isOpen || orders.length === 0) return;
+    orders.forEach((o) => {
+      if (o.status !== 'DELIVERED' && o.status !== 'CANCELLED') {
+        joinOrder(o.id);
+      }
+    });
+    return () => {
+      orders.forEach((o) => leaveOrder(o.id));
+    };
+  }, [isOpen, orders, joinOrder, leaveOrder]);
 
   if (!isOpen) return null;
 
@@ -107,9 +111,9 @@ export default function OrdersModal({ isOpen, onClose }: OrdersModalProps) {
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {wsEnabled && (
-              <span className={`ws-live-badge ${wsConnected ? 'connected' : 'connecting'}`}>
+              <span className={`ws-live-badge ${isConnected ? 'connected' : 'connecting'}`}>
                 <span className="ws-live-dot" />
-                {wsConnected ? 'Live' : 'Connecting…'}
+                {isConnected ? 'Live' : 'Connecting…'}
               </span>
             )}
             <button

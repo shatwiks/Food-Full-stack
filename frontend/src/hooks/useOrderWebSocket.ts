@@ -1,15 +1,16 @@
 /**
  * useOrderWebSocket
  *
- * Maintains a persistent, authenticated WebSocket connection to the backend.
- * - Sends AUTH message immediately after connection opens.
- * - Calls `onEvent` for ORDER_STATUS_UPDATED and ORDER_CREATED messages.
- * - Auto-reconnects with capped exponential back-off on close/error.
- * - Cleans up on unmount.
+ * Socket.IO client hook providing authenticated, room-based real-time order updates.
+ * Supports:
+ * - order:new (incoming restaurant order)
+ * - order:status_updated (real-time status progression)
+ * - Room scoping via join:order and join:restaurant
  */
 
-import { useEffect, useRef, useCallback } from 'react';
-import { useAuthStore } from '../store/authstore';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { useAuthStore } from '../store/authStore';
 import type { Order } from '../types';
 
 export type WsOrderEventType = 'ORDER_STATUS_UPDATED' | 'ORDER_CREATED';
@@ -19,94 +20,126 @@ export interface WsOrderEvent {
   data: Order;
 }
 
-const WS_URL = (() => {
+const SOCKET_SERVER_URL = (() => {
   const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
-  // Derive WS URL from the API base URL (http → ws, https → wss)
   if (apiUrl) {
-    return apiUrl.replace(/^http/, 'ws').replace(/\/api$/, '') + '/ws';
+    return apiUrl.replace(/\/api$/, '');
   }
-  return 'ws://localhost:3001/ws';
+  return 'http://localhost:3001';
 })();
 
-const MIN_DELAY_MS = 1_000;
-const MAX_DELAY_MS = 30_000;
-
 export function useOrderWebSocket(
-  onEvent: (event: WsOrderEvent) => void,
-  enabled = true,
-): { isConnected: boolean } {
+  onEvent?: (event: WsOrderEvent) => void,
+  enabled = true
+): {
+  isConnected: boolean;
+  joinOrder: (orderId: string) => void;
+  leaveOrder: (orderId: string) => void;
+  joinRestaurant: (restaurantId: string) => void;
+  leaveRestaurant: (restaurantId: string) => void;
+} {
   const { accessToken } = useAuthStore();
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectDelay = useRef(MIN_DELAY_MS);
-  const isConnectedRef = useRef(false);
+  const socketRef = useRef<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const onEventRef = useRef(onEvent);
-  const unmountedRef = useRef(false);
 
-  // Keep callback ref current without re-triggering the effect
   useEffect(() => {
     onEventRef.current = onEvent;
-  });
-
-  const connect = useCallback(() => {
-    if (unmountedRef.current) return;
-    if (!accessToken || !enabled) return;
-
-    const ws = new WebSocket(WS_URL);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      reconnectDelay.current = MIN_DELAY_MS; // reset back-off on success
-      isConnectedRef.current = true;
-      ws.send(JSON.stringify({ type: 'AUTH', token: accessToken }));
-    };
-
-    ws.onmessage = (evt) => {
-      let msg: Record<string, unknown>;
-      try {
-        msg = JSON.parse(evt.data as string);
-      } catch {
-        return;
-      }
-
-      const type = msg.type as string;
-      if (type === 'ORDER_STATUS_UPDATED' || type === 'ORDER_CREATED') {
-        onEventRef.current({
-          type: type as WsOrderEventType,
-          data: msg.data as Order,
-        });
-      }
-      // PING / AUTHENTICATED / ERROR — no action needed from UI
-    };
-
-    ws.onerror = () => {
-      // onclose will handle reconnect
-    };
-
-    ws.onclose = () => {
-      isConnectedRef.current = false;
-      wsRef.current = null;
-      if (unmountedRef.current || !enabled) return;
-
-      // Exponential back-off reconnect
-      const delay = reconnectDelay.current;
-      reconnectDelay.current = Math.min(delay * 2, MAX_DELAY_MS);
-      setTimeout(connect, delay);
-    };
-  }, [accessToken, enabled]);
+  }, [onEvent]);
 
   useEffect(() => {
-    unmountedRef.current = false;
-    connect();
+    if (!enabled || !accessToken) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setIsConnected(false);
+      }
+      return;
+    }
+
+    const socket: Socket = io(SOCKET_SERVER_URL, {
+      auth: {
+        token: accessToken,
+      },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 15,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      setIsConnected(true);
+    });
+
+    socket.on('disconnect', () => {
+      setIsConnected(false);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.warn('[Socket.IO] Connection error:', err.message);
+      setIsConnected(false);
+    });
+
+    // Listen for status updates
+    socket.on('order:status_updated', (payload: { orderId: string; status: string; order?: Order }) => {
+      if (onEventRef.current) {
+        const orderData = payload.order || ({ id: payload.orderId, status: payload.status } as Order);
+        onEventRef.current({
+          type: 'ORDER_STATUS_UPDATED',
+          data: orderData,
+        });
+      }
+    });
+
+    // Listen for new orders
+    socket.on('order:new', (newOrder: Order) => {
+      if (onEventRef.current) {
+        onEventRef.current({
+          type: 'ORDER_CREATED',
+          data: newOrder,
+        });
+      }
+    });
 
     return () => {
-      unmountedRef.current = true;
-      if (wsRef.current) {
-        wsRef.current.onclose = null; // prevent reconnect on intentional close
-        wsRef.current.close();
-        wsRef.current = null;
-      }
+      socket.disconnect();
+      socketRef.current = null;
+      setIsConnected(false);
     };
-  }, [connect]);
+  }, [enabled, accessToken]);
 
-  return { isConnected: isConnectedRef.current };
+  const joinOrder = useCallback((orderId: string) => {
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('join:order', { orderId });
+    }
+  }, []);
+
+  const leaveOrder = useCallback((orderId: string) => {
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('leave:order', { orderId });
+    }
+  }, []);
+
+  const joinRestaurant = useCallback((restaurantId: string) => {
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('join:restaurant', { restaurantId });
+    }
+  }, []);
+
+  const leaveRestaurant = useCallback((restaurantId: string) => {
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('leave:restaurant', { restaurantId });
+    }
+  }, []);
+
+  return {
+    isConnected,
+    joinOrder,
+    leaveOrder,
+    joinRestaurant,
+    leaveRestaurant,
+  };
 }

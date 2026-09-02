@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '../api/client';
-import { useAuthStore } from '../store/authstore';
+import { useAuthStore } from '../store/authStore';
 import { useToastStore } from '../store/toastStore';
 import { useOrderWebSocket } from '../hooks/useOrderWebSocket';
 import type { MenuItem, Order, OrderStatus, Restaurant } from '../types';
@@ -170,16 +170,22 @@ export default function OwnerDashboardModal({
       addToast('Please select a restaurant first.', 'error');
       return;
     }
-    if (!itemForm.name || !itemForm.price) {
+    if (!itemForm.name.trim() || !itemForm.price) {
       addToast('Name and Price are required.', 'error');
+      return;
+    }
+
+    const numericPrice = parseFloat(itemForm.price);
+    if (isNaN(numericPrice) || numericPrice <= 0) {
+      addToast('Price must be a positive number greater than 0.00.', 'error');
       return;
     }
 
     try {
       await apiClient.post(`/restaurants/${selectedRestaurantId}/menu`, {
-        name: itemForm.name,
-        description: itemForm.description,
-        price: parseFloat(itemForm.price),
+        name: itemForm.name.trim(),
+        description: itemForm.description.trim() || undefined,
+        price: Number(numericPrice.toFixed(2)),
         isAvailable: itemForm.isAvailable,
       });
 
@@ -207,11 +213,17 @@ export default function OwnerDashboardModal({
     e.preventDefault();
     if (!editingMenuItem) return;
 
+    const numericPrice = parseFloat(editItemForm.price);
+    if (isNaN(numericPrice) || numericPrice <= 0) {
+      addToast('Price must be a positive number greater than 0.00.', 'error');
+      return;
+    }
+
     try {
       const res = await apiClient.patch(`/menu-items/${editingMenuItem.id}`, {
-        name: editItemForm.name,
-        description: editItemForm.description,
-        price: parseFloat(editItemForm.price),
+        name: editItemForm.name.trim(),
+        description: editItemForm.description.trim() || undefined,
+        price: Number(numericPrice.toFixed(2)),
         isAvailable: editItemForm.isAvailable,
       });
 
@@ -347,16 +359,19 @@ export default function OwnerDashboardModal({
 
   const wsEnabled =
     !!user && (user.role === 'RESTAURANT_OWNER' || user.role === 'ADMIN') && isOpen;
-  useOrderWebSocket(handleWsEvent, wsEnabled);
+  const { isConnected, joinRestaurant, leaveRestaurant } = useOrderWebSocket(handleWsEvent, wsEnabled);
 
+  // Subscribe to restaurant rooms for real-time kitchen feed updates
   useEffect(() => {
-    if (!wsEnabled) { setWsConnected(false); return; }
-    const t = setTimeout(() => setWsConnected(true), 1200);
-    return () => clearTimeout(t);
-  }, [wsEnabled]);
+    if (!isOpen || restaurants.length === 0) return;
+    restaurants.forEach((r) => joinRestaurant(r.id));
+    return () => {
+      restaurants.forEach((r) => leaveRestaurant(r.id));
+    };
+  }, [isOpen, restaurants, joinRestaurant, leaveRestaurant]);
   // ────────────────────────────────────────────────────────────────────────
 
-  if (!isOpen) return null;
+  if (!isOpen || !user || (user.role !== 'RESTAURANT_OWNER' && user.role !== 'ADMIN')) return null;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -372,9 +387,9 @@ export default function OwnerDashboardModal({
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span className={`ws-live-badge ${wsConnected ? 'connected' : 'connecting'}`}>
+            <span className={`ws-live-badge ${isConnected ? 'connected' : 'connecting'}`}>
               <span className="ws-live-dot" />
-              {wsConnected ? 'Live' : 'Connecting…'}
+              {isConnected ? 'Live' : 'Connecting…'}
             </span>
             <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Close dashboard">
               ✕

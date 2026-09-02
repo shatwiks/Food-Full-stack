@@ -1,26 +1,80 @@
-# Dependencies
-node_modules/
+# -----------------------------------------------------------------------------
+# OrderFlow Production .gitignore
+# -----------------------------------------------------------------------------
 
-# Environment variables
+# Environment & Secret Files
 .env
 .env.*
+*.env
 !.env.example
-backend/.env
-frontend/.env
+!backend/.env.example
+!frontend/.env.example
 
-# Build output
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production Builds & Bundles
 dist/
+build/
+out/
 backend/dist/
 frontend/dist/
 backend/generated/
+*.tsbuildinfo
 
-# Caches
-**/.cache/
-**/.vite/
-**/coverage/
+# Testing & Coverage
+coverage/
+.vitest/
+.nyc_output/
+*.lcov
+
+# Docker & Database Persistent Data
+data/
+pgdata/
+docker/data/
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporary Test Payloads & Debug Artifacts
+hack-*.json
+test-*.json
+login.json
+verify.json
+verify_bad.json
+resend.json
+scratch_test.*
+*.tmp
+*.tmp.*
 
 # Logs
+logs/
+*.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# OS files
+# IDE & Editor Metadata
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+
+# Operating System Metadata
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

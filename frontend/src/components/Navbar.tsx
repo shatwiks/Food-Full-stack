@@ -1,4 +1,4 @@
-import { useAuthStore } from '../store/authstore';
+import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 
 interface NavbarProps {

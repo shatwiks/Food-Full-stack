@@ -1942,3 +1942,127 @@ button, input, select, textarea {
     display: none;
   }
 }
+
+/* 2FA Verification Styling */
+.otp-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 0 6px;
+}
+
+.otp-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  box-shadow: 0 4px 14px rgba(21, 128, 61, 0.2);
+  margin-bottom: 4px;
+}
+
+.otp-instruction-text {
+  font-size: 0.94rem;
+  color: var(--ink-secondary);
+  text-align: center;
+  line-height: 1.5;
+  max-width: 360px;
+}
+
+.otp-inputs-grid {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.otp-digit-cell {
+  width: 48px;
+  height: 58px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-light);
+  background: #FFFFFF;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--ink-primary);
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.otp-digit-cell:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
+  transform: translateY(-2px);
+}
+
+.otp-digit-cell.filled {
+  border-color: var(--ink-muted);
+  background: #FAFAF9;
+}
+
+.otp-footer-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.otp-resend-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--ink-muted);
+}
+
+.btn-link-action {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: color var(--transition-fast);
+}
+
+.btn-link-action:hover:not(:disabled) {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+.btn-link-action:disabled {
+  color: var(--ink-light);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.btn-back-login {
+  background: none;
+  border: none;
+  color: var(--ink-secondary);
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.btn-back-login:hover {
+  background: var(--bg-card-subtle);
+  color: var(--ink-primary);
+}

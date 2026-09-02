@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useAuthStore } from '../store/authstore';
+import { useAuthStore } from '../store/authStore';
 
 const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const API_BASE_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl.replace(/\/+$/, '')}/api`;
@@ -11,6 +11,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
   if (token) {
+    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -33,6 +34,17 @@ const processQueue = (error: any, token: string | null = null) => {
   refreshQueue = [];
 };
 
+const isAuthRoute = (url?: string) => {
+  if (!url) return false;
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/register') ||
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/verify-2fa') ||
+    url.includes('/auth/resend-2fa')
+  );
+};
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -42,14 +54,15 @@ apiClient.interceptors.response.use(
       error.response?.status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes('/auth/refresh') &&
-      !originalRequest.url?.includes('/auth/login')
+      !isAuthRoute(originalRequest.url)
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           refreshQueue.push({ resolve, reject });
         })
           .then((token) => {
+            originalRequest._retry = true;
+            originalRequest.headers = originalRequest.headers || {};
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return apiClient(originalRequest);
           })
@@ -75,6 +88,7 @@ apiClient.interceptors.response.use(
         const { accessToken, refreshToken: newRefreshToken } = response.data.tokens;
         useAuthStore.getState().setTokens(accessToken, newRefreshToken);
 
+        originalRequest.headers = originalRequest.headers || {};
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         processQueue(null, accessToken);
         isRefreshing = false;
@@ -90,4 +104,4 @@ apiClient.interceptors.response.use(
 
     return Promise.reject(error);
   }
-);
+);

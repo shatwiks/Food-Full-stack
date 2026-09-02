@@ -1,0 +1,68 @@
+name: OrderFlow CI / Integration Pipeline
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  validate-and-test:
+    name: Build, Lint & Test Suite
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: orderflow
+          POSTGRES_PASSWORD: orderflow_password
+          POSTGRES_DB: orderflow_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orderflow -d orderflow_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      PORT: 3001
+      DATABASE_URL: "postgresql://orderflow:orderflow_password@localhost:5432/orderflow_db?schema=public"
+      JWT_ACCESS_SECRET: "ci_jwt_access_secret_super_secure_key_12345"
+      JWT_REFRESH_SECRET: "ci_jwt_refresh_secret_super_secure_key_67890"
+      VITE_API_URL: "http://localhost:3001/api"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Run Prisma Generate
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Apply Database Migrations
+        working-directory: backend
+        run: npx prisma migrate deploy
+
+      - name: Backend TypeScript & Typecheck Verification
+        working-directory: backend
+        run: npm run lint
+
+      - name: Frontend TypeScript & Production Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Run Backend Integration & Security Tests (Vitest)
+        working-directory: backend
+        run: npm test

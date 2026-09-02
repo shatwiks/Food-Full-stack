@@ -15,7 +15,7 @@ export default function RestaurantMenuModal({ restaurant, onClose }: RestaurantM
   const [restaurantDetails, setRestaurantDetails] = useState<Restaurant | null>(restaurant);
   const [conflictItem, setConflictItem] = useState<{ item: MenuItem; restId: string; restName: string } | null>(null);
 
-  const { addItem, clearCart, setIsOpen: openCart } = useCartStore();
+  const { addItem, replaceCart, setIsOpen: openCart } = useCartStore();
   const { addToast } = useToastStore();
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function RestaurantMenuModal({ restaurant, onClose }: RestaurantM
   if (!restaurant) return null;
 
   const handleAddToCart = (item: MenuItem) => {
-    if (!restaurantDetails) return;
+    if (!restaurantDetails || !item.isAvailable) return;
     const added = addItem(item, restaurantDetails.id, restaurantDetails.name);
     if (!added) {
       setConflictItem({ item, restId: restaurantDetails.id, restName: restaurantDetails.name });
@@ -53,8 +53,7 @@ export default function RestaurantMenuModal({ restaurant, onClose }: RestaurantM
 
   const handleConfirmSwitchRestaurant = () => {
     if (!conflictItem) return;
-    clearCart();
-    addItem(conflictItem.item, conflictItem.restId, conflictItem.restName);
+    replaceCart(conflictItem.item, conflictItem.restId, conflictItem.restName);
     addToast(`Cart cleared & "${conflictItem.item.name}" added!`, 'success');
     setConflictItem(null);
   };

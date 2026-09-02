@@ -3,7 +3,7 @@ import { createOrder, getOrder, listOrders, updateOrderStatus } from '../control
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
 export const orderRouter = Router();
-orderRouter.post('/', requireAuth, requireRole('CUSTOMER'), createOrder);
+orderRouter.post('/', requireAuth, requireRole('CUSTOMER', 'ADMIN'), createOrder);
 orderRouter.get('/', requireAuth, requireRole('CUSTOMER', 'RESTAURANT_OWNER', 'ADMIN'), listOrders);
 orderRouter.get('/:id', requireAuth, requireRole('CUSTOMER', 'RESTAURANT_OWNER', 'ADMIN'), getOrder);
 orderRouter.patch('/:id/status', requireAuth, requireRole('RESTAURANT_OWNER', 'ADMIN'), updateOrderStatus);

@@ -26,6 +26,7 @@ model User {
   orders         Order[]
   restaurants    Restaurant[]
   refreshTokens  RefreshToken[]
+  otps           Otp[]
 
   @@index([email])
   @@index([role])
@@ -128,3 +129,23 @@ model OrderItem {
   @@index([menuItemId])
   @@unique([orderId, menuItemId])
 }
+
+enum OtpType {
+  LOGIN_2FA
+}
+
+model Otp {
+  id        String   @id @default(cuid())
+  userId    String
+  codeHash  String
+  type      OtpType  @default(LOGIN_2FA)
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+

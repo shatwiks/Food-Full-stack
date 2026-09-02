@@ -8,6 +8,7 @@ interface CartState {
   restaurantName: string | null;
   isOpen: boolean;
   addItem: (item: MenuItem, restaurantId: string, restaurantName: string) => boolean;
+  replaceCart: (item: MenuItem, restaurantId: string, restaurantName: string) => void;
   removeItem: (menuItemId: string) => void;
   updateQuantity: (menuItemId: string, delta: number) => void;
   clearCart: () => void;
@@ -50,6 +51,14 @@ export const useCartStore = create<CartState>()(
         });
 
         return true;
+      },
+
+      replaceCart: (item: MenuItem, restaurantId: string, restaurantName: string) => {
+        set({
+          items: [{ menuItem: item, restaurantId, restaurantName, quantity: 1 }],
+          restaurantId,
+          restaurantName,
+        });
       },
 
       removeItem: (menuItemId: string) => {

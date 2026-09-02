@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { parseId } from './restaurantController.js';
-import { notifyOrder } from '../lib/wss.js';
+import { getIO } from '../socket.js';
 
 const createSchema = z.object({ restaurantId: z.string().cuid(), deliveryAddress: z.string().trim().min(1).optional(), items: z.array(z.object({ menuItemId: z.string().cuid(), quantity: z.coerce.number().int().min(1).max(100), price: z.unknown().optional() })).min(1) });
 const statusSchema = z.object({ status: z.enum(['PENDING', 'CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED']) });
@@ -23,7 +23,14 @@ export const createOrder = async (req: Request, res: Response) => {
   const orderItems = items.map((item) => { const menuItem = byId.get(item.menuItemId)!; return { menuItemId: item.menuItemId, quantity: item.quantity, unitPrice: menuItem.price }; });
   const totalAmount = orderItems.reduce((total, item) => total + Number(item.unitPrice) * item.quantity, 0).toFixed(2);
   const order = await prisma.order.create({ data: { userId: req.user!.id, restaurantId, deliveryAddress, totalAmount, items: { create: orderItems } }, include });
-  notifyOrder('ORDER_CREATED', order as any);
+
+  try {
+    const io = getIO();
+    io.to(`restaurant:${restaurantId}`).emit('order:new', order);
+  } catch (err) {
+    console.error('Socket emit order:new error:', err);
+  }
+
   res.status(201).json({ status: 'success', data: order });
 };
 
@@ -39,11 +46,56 @@ export const getOrder = async (req: Request, res: Response) => {
   res.json({ status: 'success', data: order });
 };
 
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  PENDING: ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['PREPARING', 'CANCELLED'],
+  PREPARING: ['OUT_FOR_DELIVERY', 'CANCELLED'],
+  OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
+  DELIVERED: [],
+  CANCELLED: [],
+};
+
 export const updateOrderStatus = async (req: Request, res: Response) => {
-  const id = parseId(req.params.id, res); if (!id) return;
-  const parsed = statusSchema.safeParse(req.body); if (!parsed.success) { res.status(400).json({ status: 'error', message: parsed.error.issues[0]?.message ?? 'Invalid order status.' }); return; }
-  const order = await accessibleOrder(id, req.user!); if (!order) { const exists = await prisma.order.findUnique({ where: { id }, select: { id: true } }); res.status(exists ? 403 : 404).json({ status: 'error', message: exists ? 'You do not manage this order.' : 'Order not found.' }); return; }
+  const id = parseId(req.params.id, res);
+  if (!id) return;
+  const parsed = statusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ status: 'error', message: parsed.error.issues[0]?.message ?? 'Invalid order status.' });
+    return;
+  }
+  const order = await accessibleOrder(id, req.user!);
+  if (!order) {
+    const exists = await prisma.order.findUnique({ where: { id }, select: { id: true } });
+    res.status(exists ? 403 : 404).json({ status: 'error', message: exists ? 'You do not manage this order.' : 'Order not found.' });
+    return;
+  }
+
+  if (req.user!.role !== 'ADMIN') {
+    const allowed = VALID_TRANSITIONS[order.status] || [];
+    if (!allowed.includes(parsed.data.status)) {
+      res.status(400).json({
+        status: 'error',
+        message: `Invalid status transition from ${order.status} to ${parsed.data.status}.`,
+      });
+      return;
+    }
+  }
+
   const updated = await prisma.order.update({ where: { id }, data: { status: parsed.data.status }, include });
-  notifyOrder('ORDER_STATUS_UPDATED', updated as any);
+
+  try {
+    const io = getIO();
+    const eventPayload = {
+      orderId: order.id,
+      status: parsed.data.status,
+      updatedAt: updated.updatedAt,
+      order: updated,
+    };
+    io.to(`order:${order.id}`).emit('order:status_updated', eventPayload);
+    io.to(`restaurant:${order.restaurantId}`).emit('order:status_updated', eventPayload);
+  } catch (err) {
+    console.error('Socket emit order:status_updated error:', err);
+  }
+
   res.json({ status: 'success', data: updated });
 };
