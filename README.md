@@ -111,6 +111,37 @@ $$\text{PENDING} \longrightarrow \text{CONFIRMED} \longrightarrow \text{PREPARIN
 
 ---
 
+---
+
+## 🎨 Cyber-Luxury UI & Experience Engine
+
+OrderFlow features a modern **"Cyber-Luxury / High-Tech Gourmet"** frontend interface engineered for maximum visual impact and responsiveness:
+
+### 1. Dynamic Dark / Light Mode Switcher
+- **Dark Mode (Default Signature Look)**: Deep obsidian void (`#080a0f`) layered with multi-point radial glow meshes, frosted glass panels (`background: rgba(16, 22, 34, 0.75)`, `backdrop-filter: blur(20px)`), neon emerald (`#00f59b`) primary accents, cyber-amber (`#f5a623`) pricing, and cool cyan (`#00e5ff`) live indicators.
+- **Light Mode**: High-contrast alabaster ivory (`#f8fafc`) with emerald highlights and champagne gold accents.
+- **State Synchronization**: Persisted across browser sessions in `localStorage` via Zustand (`themeStore.ts`) with immediate `<html data-theme="...">` DOM synchronization and zero-flash loading.
+
+### 2. Collapsible Navigation Sidebar (`Sidebar.tsx`)
+- Accessible via the hamburger navigation button on the top-left of the navbar.
+- Glassmorphic slide-in drawer featuring:
+  - 🧭 **Explore All Kitchens**: Instantly scrolls and resets filters.
+  - 🍛 **Indian Specials (Desi Zaika)**: Filter directly to authentic North & South Indian dishes with a glowing `🔥 Trending` badge.
+  - 🍱 **Quick Cuisines Grid**: Quick-filter chips for Biryani & Curry, Italian, Mexican, Japanese, and American.
+  - 🛒 **My Cart & Active Orders Tracker**: One-click slide-in drawer and real-time status tracker.
+  - 👨‍🍳 **Kitchen Management Studio**: Role-gated portal for `RESTAURANT_OWNER` and `ADMIN`.
+  - 🛡️ **2FA & Account Security**: Direct trigger for the authentication modal.
+
+### 3. Indian Cuisine Expansion & Currency Engine (INR ₹)
+- **Currency Formatter (`currency.ts`)**: Built-in `formatPrice` utility applying standard Indian numbering system formatting (`₹380`, `₹1,250`, etc.) across restaurant menus, cart drawer, order summaries, and owner revenue KPIs.
+- **Localized Thresholds**: Free delivery for orders over **₹300+**, with standard ₹40 delivery fee for smaller carts.
+- **Authentic Seeded Kitchens**:
+  - **Dum Pukht Darbar** (Awadhi & Mughlai): Lucknowi Chicken Dum Biryani (₹380), Paneer Butter Masala (₹290), Garlic Butter Naan (₹60), Dal Makhani (₹240).
+  - **Dakshin Flavors** (South Indian / Chettinad): Ghee Masala Dosa (₹160), Chettinad Chicken Pepper Fry (₹320), Medu Vada Plate (₹110), Traditional Filter Coffee (₹70).
+  - **Spice Route Biryani & Curry**: Hyderabadi Dum Chicken Biryani (₹340), Butter Chicken with Garlic Naan (₹310), Paneer Tikka Masala (₹260), Alphonso Mango Lassi (₹90).
+
+---
+
 ## 🛠️ Tech Stack & Monorepo Structure
 
 ```text
@@ -120,21 +151,24 @@ orderflow/
 ├── backend/
 │   ├── prisma/
 │   │   ├── schema.prisma       # Relational models (User, Restaurant, MenuItem, Order, Otp)
+│   │   ├── seed.ts             # Multi-tenant demo users and authentic Indian & global kitchens
 │   │   └── migrations/         # Version-controlled SQL migrations
 │   ├── src/
 │   │   ├── controllers/        # Business logic & request validation
-│   │   ├── middleware/         # JWT Auth, RBAC guards, error handling
+│   │   ├── middleware/         # JWT Auth, 2FA guard, RBAC guards, error handling
 │   │   ├── routes/             # RESTful API route definitions
 │   │   ├── socket.ts           # WebSocket connection handling & room events
+│   │   ├── utils/              # mailer.ts (Resend API & dev console sink), jwt.ts
 │   │   └── app.ts / server.ts  # Express app entry points
 │   └── tests/                  # Vitest integration & security suites
 ├── frontend/
 │   ├── src/
 │   │   ├── api/client.ts       # Axios client with bearer token interceptor
-│   │   ├── components/         # Modals, drawers, navigation, menus
-│   │   ├── pages/              # Responsive customer and owner views
-│   │   ├── store/              # Zustand global state stores
-│   │   └── styles.css          # Modern, responsive design system
+│   │   ├── components/         # Navbar, Sidebar, Modals, Drawers, RestaurantCards
+│   │   ├── pages/              # HomePage with responsive cuisine filters & search
+│   │   ├── store/              # Zustand state stores (authStore, cartStore, themeStore, toastStore)
+│   │   ├── utils/              # currency.ts (Indian Rupee ₹ formatter)
+│   │   └── styles.css          # Cyber-luxury design system & dark/light mode tokens
 └── package.json                # Monorepo workspace orchestration
 ```
 
