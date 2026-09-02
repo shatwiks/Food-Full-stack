@@ -10,7 +10,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const { authStage, login, verify2FA, resend2FA, reset2FA, setAuth } = useAuthStore();
+  const { authStage, devCode, login, verify2FA, resend2FA, reset2FA, setAuth } = useAuthStore();
   const { addToast } = useToastStore();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -44,16 +44,24 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     };
   }, [authStage, resendCooldown]);
 
-  // Focus first OTP cell upon entering 2FA stage
+  // Focus first OTP cell upon entering 2FA stage (or auto-fill dev code if available)
   useEffect(() => {
     if (authStage === 'AWAITING_2FA') {
-      setOtpDigits(['', '', '', '', '', '']);
+      if (devCode) {
+        setOtpDigits(devCode.split('').slice(0, 6));
+      } else {
+        setOtpDigits(['', '', '', '', '', '']);
+      }
       setResendCooldown(60);
       setTimeout(() => {
-        otpInputRefs.current[0]?.focus();
+        if (devCode) {
+          otpInputRefs.current[5]?.focus();
+        } else {
+          otpInputRefs.current[0]?.focus();
+        }
       }, 100);
     }
-  }, [authStage]);
+  }, [authStage, devCode]);
 
   if (!isOpen) return null;
 
@@ -86,7 +94,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       } else {
         const res = await login(form.email.trim(), form.password);
         if (res.requires2FA) {
-          addToast('Verification code sent to your email ✉️', 'info');
+          if (res.devCode) {
+            addToast(`Verification code sent! (Dev OTP: ${res.devCode}) ✉️`, 'info');
+          } else {
+            addToast('Verification code sent to your email ✉️', 'info');
+          }
         } else {
           addToast('Welcome back! 👋', 'success');
           handleClose();
@@ -105,9 +117,13 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setLoading(true);
     setError('');
     try {
-      const res = await login(email, 'Password123!');
+      const res = await login(email, 'password123');
       if (res.requires2FA) {
-        addToast('Verification code sent to your email ✉️', 'info');
+        if (res.devCode) {
+          addToast(`Verification code sent! (Dev OTP: ${res.devCode}) ✉️`, 'info');
+        } else {
+          addToast('Verification code sent to your email ✉️', 'info');
+        }
       } else {
         addToast(`Logged in as Demo ${_role}! 🚀`, 'success');
         handleClose();
@@ -185,9 +201,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     try {
       await resend2FA();
       setResendCooldown(60);
-      setOtpDigits(['', '', '', '', '', '']);
-      otpInputRefs.current[0]?.focus();
-      addToast('A fresh verification code has been dispatched to your email.', 'info');
+      const currentDevCode = useAuthStore.getState().devCode;
+      if (currentDevCode) {
+        setOtpDigits(currentDevCode.split('').slice(0, 6));
+        addToast(`A fresh verification code was generated! (Dev OTP: ${currentDevCode})`, 'info');
+      } else {
+        setOtpDigits(['', '', '', '', '', '']);
+        otpInputRefs.current[0]?.focus();
+        addToast('A fresh verification code has been dispatched to your email.', 'info');
+      }
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Unable to resend code. Please try again.';
       setError(msg);
@@ -227,6 +249,30 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <p className="otp-instruction-text">
                   We've sent a 6-digit security code to your registered email address. Please enter it below within <strong>5 minutes</strong>.
                 </p>
+
+                {devCode && (
+                  <div
+                    style={{
+                      background: 'rgba(249, 115, 22, 0.1)',
+                      border: '1px dashed rgba(249, 115, 22, 0.4)',
+                      borderRadius: '8px',
+                      padding: '10px 14px',
+                      marginBottom: '16px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      color: '#fdba74',
+                    }}
+                    onClick={() => {
+                      setOtpDigits(devCode.split('').slice(0, 6));
+                      otpInputRefs.current[5]?.focus();
+                    }}
+                    title="Click to auto-fill"
+                  >
+                    <span>🧪 Local Dev OTP: <strong style={{ color: '#fff', letterSpacing: '2px' }}>{devCode}</strong></span>
+                    <span style={{ display: 'block', fontSize: '11px', marginTop: '2px', opacity: 0.8 }}>(Click here to auto-fill code)</span>
+                  </div>
+                )}
 
                 <div className="otp-inputs-grid" onPaste={handleOtpPaste}>
                   {otpDigits.map((digit, idx) => (

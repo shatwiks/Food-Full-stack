@@ -22,11 +22,35 @@ async function main() {
     },
   });
 
+  const customerDev = await prisma.user.upsert({
+    where: { email: 'customer@orderflow.dev' },
+    update: {},
+    create: {
+      email: 'customer@orderflow.dev',
+      password: passwordHash,
+      firstName: 'Alice',
+      lastName: 'Johnson',
+      role: 'CUSTOMER',
+    },
+  });
+
   const owner = await prisma.user.upsert({
     where: { email: 'owner@orderflow.com' },
     update: {},
     create: {
       email: 'owner@orderflow.com',
+      password: passwordHash,
+      firstName: 'Chef Marco',
+      lastName: 'Rossi',
+      role: 'RESTAURANT_OWNER',
+    },
+  });
+
+  const ownerDev = await prisma.user.upsert({
+    where: { email: 'owner@orderflow.dev' },
+    update: {},
+    create: {
+      email: 'owner@orderflow.dev',
       password: passwordHash,
       firstName: 'Chef Marco',
       lastName: 'Rossi',
@@ -46,7 +70,26 @@ async function main() {
     },
   });
 
-  console.log('Users seeded:', { customer: customer.email, owner: owner.email, admin: admin.email });
+  const adminDev = await prisma.user.upsert({
+    where: { email: 'admin@orderflow.dev' },
+    update: {},
+    create: {
+      email: 'admin@orderflow.dev',
+      password: passwordHash,
+      firstName: 'System',
+      lastName: 'Admin',
+      role: 'ADMIN',
+    },
+  });
+
+  console.log('Users seeded:', {
+    customer: customer.email,
+    customerDev: customerDev.email,
+    owner: owner.email,
+    ownerDev: ownerDev.email,
+    admin: admin.email,
+    adminDev: adminDev.email,
+  });
 
   // 2. Restaurants data
   const restaurantConfigs = [
