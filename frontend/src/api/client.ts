@@ -1,11 +1,12 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-const API_BASE_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl.replace(/\/+$/, '')}/api`;
+const cleanUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').trim().replace(/\/+$/, '');
+const API_BASE_URL = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
 });
 
 apiClient.interceptors.request.use((config) => {

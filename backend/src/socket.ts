@@ -3,6 +3,8 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { prisma } from './lib/prisma.js';
 
+import { isOriginAllowed } from './utils/cors.js';
+
 interface SocketUser {
   id: string;
   email: string;
@@ -20,7 +22,13 @@ let io: Server | null = null;
 export const initSocketServer = (httpServer: HttpServer): Server => {
   io = new Server(httpServer, {
     cors: {
-      origin: '*',
+      origin: (origin, callback) => {
+        if (!origin || isOriginAllowed(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Blocked by CORS policy'));
+        }
+      },
       methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
       credentials: true,
     },

@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { isOriginAllowed } from './utils/cors.js';
 import { healthRouter } from './routes/health.js';
 import { authRouter } from './routes/auth.js';
 import { restaurantRouter } from './routes/restaurants.js';
@@ -7,26 +8,25 @@ import { menuRouter } from './routes/menu.js';
 import { orderRouter } from './routes/orders.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
-const allowedOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
 export const app = express();
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*') || allowedOrigins.some(allowed => allowed.includes('localhost') && origin.includes('localhost'))) {
+      if (isOriginAllowed(origin)) {
         callback(null, true);
-        return;
+      } else {
+        console.warn(`[CORS] Rejected request from origin: ${origin}`);
+        callback(null, false);
       }
-
-      callback(null, false);
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Set-Cookie'],
   })
 );
+
 app.use(express.json());
 app.use('/', healthRouter);
 app.use('/api/auth', authRouter);

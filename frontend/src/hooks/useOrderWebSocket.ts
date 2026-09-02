@@ -21,7 +21,7 @@ export interface WsOrderEvent {
 }
 
 const SOCKET_SERVER_URL = (() => {
-  const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
+  const apiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim().replace(/\/+$/, '');
   if (apiUrl) {
     return apiUrl.replace(/\/api$/, '');
   }

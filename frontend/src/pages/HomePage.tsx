@@ -44,7 +44,13 @@ export default function HomePage() {
       setLoading(true);
       setError('');
       const response = await apiClient.get('/restaurants?limit=50');
-      setRestaurants(response.data.data ?? []);
+      const rawData = response.data;
+      const list = Array.isArray(rawData)
+        ? rawData
+        : Array.isArray(rawData?.data)
+        ? rawData.data
+        : [];
+      setRestaurants(list);
     } catch (loadError) {
       setError('Unable to load restaurants right now. Please verify backend is running.');
       addToast('Error loading restaurants', 'error');
