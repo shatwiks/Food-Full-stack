@@ -9,11 +9,13 @@ const getCuisineIcon = (cuisine?: string | null) => {
   const c = cuisine?.toLowerCase() || '';
   if (c.includes('italian') || c.includes('pizza') || c.includes('pasta')) return '🍕';
   if (c.includes('mexican') || c.includes('taco')) return '🌮';
-  if (c.includes('japanese') || c.includes('sushi') || c.includes('ramen') || c.includes('asian')) return '🍣';
+  if (c.includes('japanese') || c.includes('sushi') || c.includes('ramen')) return '🍣';
+  if (c.includes('chinese') || c.includes('dim sum') || c.includes('sichuan') || c.includes('asian')) return '🥟';
   if (c.includes('burger') || c.includes('american')) return '🍔';
   if (c.includes('indian') || c.includes('curry') || c.includes('biryani')) return '🍛';
   if (c.includes('thai')) return '🍜';
-  if (c.includes('dessert') || c.includes('bakery')) return '🍰';
+  if (c.includes('french') || c.includes('bistro') || c.includes('dessert') || c.includes('bakery')) return '🥐';
+  if (c.includes('mediterranean') || c.includes('greek')) return '🥗';
   return '🍽️';
 };
 

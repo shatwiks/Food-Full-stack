@@ -201,6 +201,51 @@ async function main() {
         { name: 'Traditional Filter Coffee', description: 'Freshly brewed chicory blend South Indian decoction frothed with boiling whole milk in a brass dabarah', price: 70.00 },
       ],
     },
+    {
+      name: 'Dragon Wok & Dim Sum',
+      slug: 'dragon-wok-dimsum',
+      cuisine: 'Chinese',
+      description: 'Handcrafted steamed dim sums, fiery Sichuan kung pao, artisanal wok noodles, and soothing jasmine teas.',
+      address: '88 Chinatown Arcade, Golden Plaza',
+      phone: '+91 98112 33445',
+      ownerId: owner.id,
+      menuItems: [
+        { name: 'Steamed Chicken Dim Sum (6 pcs)', description: 'Delicate translucent wrappers filled with minced chicken, ginger, and water chestnuts with fiery chili oil dip', price: 280.00 },
+        { name: 'Fiery Kung Pao Chicken', description: 'Wok-tossed chicken chunks with Sichuan peppercorns, dried red chilies, scallions, and roasted peanuts', price: 320.00 },
+        { name: 'Chili Garlic Hakka Noodles', description: 'Wok-charred wheat noodles tossed with julienned vegetables, roasted garlic, and dark soy sauce', price: 240.00 },
+        { name: 'Fragrant Jasmine Green Tea', description: 'Traditional loose leaf green tea scented with sweet night-blooming jasmine flowers', price: 90.00 },
+      ],
+    },
+    {
+      name: 'Le Bistro Parisien',
+      slug: 'le-bistro-parisien',
+      cuisine: 'French',
+      description: 'Classic Parisian brasserie dining with buttery golden pastries, savory quiches, and slow-cooked rustic stews.',
+      address: '17 Avenue Montaigne, French Quarter',
+      phone: '+91 97234 55667',
+      ownerId: owner.id,
+      menuItems: [
+        { name: 'Artisanal Butter Croissant', description: 'Flaky, laminated French pastry crafted with churned Normandy butter, baked golden and crisp', price: 120.00 },
+        { name: 'Truffle Mushroom Quiche', description: 'Savory egg custard tart infused with sautéed forest mushrooms, Gruyère cheese, and black truffle oil', price: 260.00 },
+        { name: 'Slow-Cooked Beef Bourguignon', description: 'Tender braised beef chunks slow-simmered in red wine gravy with baby carrots, pearl onions, and herbs', price: 480.00 },
+        { name: 'Dark Belgian Chocolate Soufflé', description: 'Warm, airy chocolate soufflé with a molten center dusted with powdered sugar and vanilla bean crème', price: 220.00 },
+      ],
+    },
+    {
+      name: 'Santorini Blue Mediterranean',
+      slug: 'santorini-blue-mediterranean',
+      cuisine: 'Mediterranean',
+      description: 'Coastal Aegean flavors featuring char-grilled souvlaki skewers, fresh mezze platters, and honey walnut baklava.',
+      address: '29 Coastal Boulevard, Marina Bay',
+      phone: '+91 98765 11223',
+      ownerId: owner.id,
+      menuItems: [
+        { name: 'Grilled Chicken Souvlaki Platter', description: 'Herb-marinated chicken skewers grilled over open fire, served with warm pita, tzatziki, and Greek salad', price: 360.00 },
+        { name: 'Classic Falafel & Creamy Hummus Bowl', description: 'Crispy herb chickpea fritters paired with silky tahini hummus, kalamata olives, and extra virgin olive oil', price: 280.00 },
+        { name: 'Crispy Greek Spanakopita', description: 'Crispy phyllo pastry triangles stuffed with spinach, creamy feta cheese, dill, and lemon zest', price: 220.00 },
+        { name: 'Golden Honey Walnut Baklava (3 pcs)', description: 'Layers of delicate phyllo dough packed with chopped walnuts and drenched in orange blossom honey syrup', price: 160.00 },
+      ],
+    },
   ];
 
   for (const rData of restaurantConfigs) {
@@ -232,7 +277,19 @@ async function main() {
     }
   }
 
-  console.log('Database seeded successfully!');
+  // Ensure exactly the 10 curated restaurants are active
+  await prisma.restaurant.updateMany({
+    where: {
+      slug: {
+        notIn: restaurantConfigs.map((r) => r.slug),
+      },
+    },
+    data: {
+      isActive: false,
+    },
+  });
+
+  console.log('Database seeded successfully with exactly 10 restaurants!');
 }
 
 main()

@@ -1,5 +1,10 @@
+import ThemeProvider from './components/ThemeProvider';
 import HomePage from './pages/HomePage';
 
 export default function App() {
-  return <HomePage />;
+  return (
+    <ThemeProvider>
+      <HomePage />
+    </ThemeProvider>
+  );
 }
