@@ -21,7 +21,7 @@
 
 ### 1. Clone & Environment Setup
 ```bash
-git clone [https://github.com/Meghana-kb10/Food-Ordering-Real-Time-Delivery-Platform.git](https://github.com/Meghana-kb10/Food-Ordering-Real-Time-Delivery-Platform.git)
+git clone [https://github.com/shatwiks/Food-Full-stack.git](https://github.com/shatwiks/Food-Full-stack.git)
 cd Food-Ordering-Real-Time-Delivery-Platform
 
 # Copy sample configs
