@@ -12,17 +12,6 @@
 [![Vitest](https://img.shields.io/badge/Vitest-3.x-FCC72B.svg?logo=vitest)](https://vitest.dev/)
 
 ```markdown
-# OrderFlow ⚡🍽️
-
-> Production-grade, multi-tenant food ordering engine with database-authoritative billing, two-phase 2FA security, and low-latency WebSocket order lifecycles.
-
-[![CI Pipeline](https://github.com/shatwiks/Food-Full-stack/actions/workflows/ci.yml/badge.svg)](https://github.com/shatwiks/Food-Full-stack/actions)
-![Node Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)
-![PostgreSQL](https://img.shields.io/badge/database-PostgreSQL%2015-blue)
-![Prisma](https://img.shields.io/badge/ORM-Prisma-darkblue)
-![TypeScript](https://img.shields.io/badge/typescript-strict-blue)
-
----
 
 ## ⚡ Quickstart (Run Locally in 60s)
 
